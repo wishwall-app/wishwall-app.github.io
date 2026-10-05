@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>愿望墙</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0b0b0f;--surface:#141419;--card:#1a1a22;--card-hover:#1f1f2a;
+  --border:#2a2a35;--border-hover:#3a3a4a;
+  --text:#d4d4dc;--text-sec:#8888a0;--text-dim:#55556a;
+  --accent:#c8a24e;--accent-light:#e8c86e;--accent-bg:rgba(200,162,78,0.08);
+  --green:#5a9e6f;--green-bg:rgba(90,158,111,0.1);
+  --radius:10px;--radius-lg:14px;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;
+  line-height:1.6;-webkit-font-smoothing:antialiased;
+}
+.glow{
+  position:fixed;top:-40%;left:50%;transform:translateX(-50%);
+  width:800px;height:600px;
+  background:radial-gradient(ellipse,rgba(200,162,78,0.06) 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+}
+.container{
+  position:relative;z-index:1;max-width:720px;
+  margin:0 auto;padding:0 20px 60px;
+}
+header{padding:56px 0 12px;text-align:center}
+header h1{
+  font-size:1.5em;font-weight:600;letter-spacing:2px;
+  color:var(--accent);margin-bottom:8px;
+}
+header p{font-size:0.88em;color:var(--text-sec);font-weight:300}
+.stats{display:flex;justify-content:center;gap:40px;padding:20px 0 32px}
+.stat{text-align:center}
+.stat b{display:block;font-size:1.4em;color:var(--text);font-weight:600}
+.stat span{font-size:0.75em;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase}
+.panel{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:24px;margin-bottom:24px;
+  transition:border-color .3s;
+}
+.panel:hover{border-color:var(--border-hover)}
+.panel-title{
+  font-size:0.82em;font-weight:600;color:var(--text-sec);
+  letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;
+}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+@media(max-width:500px){.form-grid{grid-template-columns:1fr}}
+input,select,textarea{
+  width:100%;padding:10px 14px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);color:var(--text);font-size:0.9em;
+  outline:none;transition:border-color .3s;font-family:inherit;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+select option{background:var(--surface);color:var(--text)}
+textarea{min-height:90px;resize:vertical;margin-bottom:4px}
+::placeholder{color:var(--text-dim)}
+.form-footer{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.char-count{font-size:0.75em;color:var(--text-dim)}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 20px;border:1px solid var(--border);border-radius:var(--radius);
+  background:transparent;color:var(--text-sec);font-size:0.85em;
+  cursor:pointer;transition:all .25s;font-family:inherit;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:600}
+.btn.pri:hover{background:var(--accent-light);border-color:var(--accent-light)}
+.btn.sm{padding:5px 12px;font-size:0.78em}
+.btn.green{border-color:var(--green);color:var(--green)}
+.btn.green:hover{background:var(--green-bg)}
+.btn.done{background:var(--green-bg);border-color:var(--green);color:var(--green);cursor:default;opacity:.8}
+.toolbar{display:flex;gap:10px;margin-bottom:14px;align-items:center}
+.search-box{
+  flex:1;display:flex;align-items:center;gap:8px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:0 12px;transition:border-color .3s;
+}
+.search-box:focus-within{border-color:var(--accent)}
+.search-box svg{color:var(--text-dim);flex-shrink:0}
+.search-box input{border:none;background:none;padding:9px 0}
+.search-box input:focus{border-color:transparent}
+.toolbar select{width:auto;min-width:110px;padding:9px 12px;background:var(--card)}
+.tags{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.tag{
+  padding:4px 14px;border-radius:20px;font-size:0.78em;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text-dim);cursor:pointer;transition:all .25s;
+}
+.tag:hover,.tag.on{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:20px 22px;margin-bottom:12px;
+  transition:all .25s;
+}
+.card:hover{border-color:var(--border-hover);background:var(--card-hover)}
+.card.done{border-color:rgba(90,158,111,.25);background:rgba(90,158,111,.03)}
+.card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.card-author{font-size:0.9em;font-weight:500}
+.card-meta{display:flex;gap:8px;align-items:center}
+.card-tag{font-size:0.7em;padding:2px 10px;border-radius:10px;background:var(--accent-bg);color:var(--accent);letter-spacing:.5px}
+.card-city{font-size:0.7em;color:var(--text-dim)}
+.card-body{color:var(--text-sec);font-size:0.92em;line-height:1.7;margin-bottom:14px;word-break:break-word}
+.card-foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.card-time{font-size:0.75em;color:var(--text-dim)}
+.card-actions{display:flex;gap:6px;align-items:center}
+.likes{font-size:0.8em;color:var(--text-dim);margin-right:4px}
+.msg-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.msg{padding:8px 12px;margin-bottom:6px;border-radius:8px;background:var(--surface);font-size:0.84em;color:var(--text-sec)}
+.msg b{color:var(--accent);font-weight:500}
+.msg-input{display:flex;gap:8px;margin-top:8px}
+.msg-input input{flex:1}
+.overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+  z-index:100;justify-content:center;align-items:center;
+}
+.overlay.show{display:flex}
+.modal{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:28px;
+  max-width:440px;width:92%;max-height:80vh;overflow-y:auto;
+}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-head span{font-size:1em;font-weight:600;color:var(--text)}
+.btn-close{background:none;border:none;color:var(--text-dim);font-size:1.4em;cursor:pointer;padding:0 4px;line-height:1}
+.btn-close:hover{color:var(--text)}
+.empty,.loading{display:none;text-align:center;padding:60px 20px;color:var(--text-dim)}
+.loading{display:block}
+.empty-icon{font-size:2em;margin-bottom:8px;opacity:.4}
+.toast{
+  position:fixed;bottom:30px;left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:var(--card);border:1px solid var(--accent);
+  color:var(--accent);padding:10px 28px;border-radius:var(--radius);
+  font-size:0.88em;z-index:200;transition:transform .35s;pointer-events:none;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="container">
+<header>
+  <h1>WISH WALL</h1>
+  <p>把愿望留在这里。也许，刚好有人愿意替你实现。</p>
+</header>
+<div class="stats">
+  <div class="stat"><b id="sTotal">0</b><span>愿望</span></div>
+  <div class="stat"><b id="sWaiting">0</b><span>等待中</span></div>
+  <div class="stat"><b id="sFulfilled">0</b><span>已实现</span></div>
+</div>
+<div class="panel">
+  <div class="panel-title">许一个愿望</div>
+  <div class="form-grid">
+    <input type="text" id="fName" placeholder="昵称（留空则匿名）" maxlength="20">
+    <select id="fCat">
+      <option value="学习">学习</option><option value="生活">生活</option>
+      <option value="医疗">医疗</option><option value="宠物">宠物</option>
+      <option value="梦想">梦想</option><option value="其他">其他</option>
+    </select>
+  </div>
+  <textarea id="fContent" placeholder="描述你的愿望，说说原因，让好心人更了解你" maxlength="500" oninput="updateCount()"></textarea>
+  <div class="form-grid">
+    <input type="text" id="fContact" placeholder="联系方式（选填，仅认领者可见）" maxlength="60">
+    <input type="text" id="fCity" placeholder="所在城市（选填）" maxlength="20">
+  </div>
+  <div class="form-footer">
+    <span class="char-count" id="charCount">0 / 500</span>
+    <button class="btn pri" onclick="postWish()">发布愿望</button>
+  </div>
+</div>
+<div class="toolbar">
+  <div class="search-box">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="searchInput" placeholder="搜索愿望..." oninput="render()">
+  </div>
+  <select id="sortBy" onchange="render()">
+    <option value="newest">最新发布</option>
+    <option value="oldest">最早发布</option>
+    <option value="hot">最多支持</option>
+  </select>
+</div>
+<div class="tags" id="tags"></div>
+<div id="list"></div>
+<div class="loading" id="loading">加载中...</div>
+<div class="empty" id="empty"><div class="empty-icon">○</div><p>还没有愿望</p></div>
+</div>
+<div class="overlay" id="overlay" onclick="closeModal()">
+<div class="modal" onclick="event.stopPropagation()">
+  <div class="modal-head"><span id="mTitle"></span><button class="btn-close" onclick="closeModal()">&times;</button></div>
+  <div id="mBody"></div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const SUPA_URL='https://rzrbbgvfihebshalwcnq.supabase.co';
+const SUPA_KEY='sb_publishable_9xwcxl8deKEr6NzNA4WiTQ_NZZodOP3';
+const db=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+const CATS=['全部','学习','生活','医疗','宠物','梦想','其他'];
+let curCat='全部',claimId=null,allWishes=[];
+
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+function timeAgo(ts){
+  const m=Math.floor((Date.now()-ts)/60000);
+  if(m<1)return'刚刚';if(m<60)return m+'分钟前';
+  const h=Math.floor(m/60);if(h<24)return h+'小时前';
+  const d=Math.floor(h/24);if(d<30)return d+'天前';
+  return new Date(ts).toLocaleDateString('zh-CN');
+}
+function updateCount(){
+  const v=document.getElementById('fContent').value;
+  document.getElementById('charCount').textContent=v.length+' / 500';
+}
+function getUid(){
+  let u=localStorage.getItem('ww_uid');
+  if(!u){u='u_'+Math.random().toString(36).slice(2,10);localStorage.setItem('ww_uid',u);}
+  return u;
+}
+
+// 从数据库加载
+async function loadAll(){
+  const{data,error}=await db.from('wishes').select('*').order('created_at',{ascending:false});
+  if(error){console.error(error);toast('加载失败，请刷新');return;}
+  allWishes=data||[];
+  document.getElementById('loading').style.display='none';
+  render();
+}
+
+// 标签
+function renderTags(){
+  document.getElementById('tags').innerHTML=CATS.map(c=>
+    `<button class="tag${curCat===c?' on':''}" onclick="curCat='${c}';renderTags();render()">${c}</button>`
+  ).join('');
+}
+
+// 发布
+async function postWish(){
+  const content=document.getElementById('fContent').value.trim();
+  if(!content){toast('写点什么再许愿吧');return;}
+  const wish={
+    id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    name:document.getElementById('fName').value.trim()||'匿名',
+    cat:document.getElementById('fCat').value,
+    content,
+    contact:document.getElementById('fContact').value.trim(),
+    city:document.getElementById('fCity').value.trim(),
+    likes:0,liked_by:[],
+    fulfilled:false,claimed_by:null,msgs:[],
+    created_at:Date.now()
+  };
+  const{error}=await db.from('wishes').insert(wish);
+  if(error){console.error(error);toast('发布失败');return;}
+  document.getElementById('fContent').value='';
+  document.getElementById('fContact').value='';
+  document.getElementById('fCity').value='';
+  updateCount();
+  toast('愿望已发布');
+  await loadAll();
+}
+
+// 点赞
+async function like(id){
+  const w=allWishes.find(x=>x.id===id);if(!w)return;
+  const uid=getUid();
+  let likedBy=w.liked_by||[];let likes=w.likes||0;
+  if(likedBy.includes(uid)){likedBy=likedBy.filter(x=>x!==uid);likes=Math.max(0,likes-1);}
+  else{likedBy.push(uid);likes++;}
+  await db.from('wishes').update({likes,liked_by:likedBy}).eq('id',id);
+  await loadAll();
+}
+
+// 留言
+async function addMsg(id){
+  const inp=document.getElementById('msg_'+id);if(!inp)return;
+  const text=inp.value.trim();if(!text)return;
+  const w=allWishes.find(x=>x.id===id);if(!w)return;
+  const msgs=[...(w.msgs||[]),{from:'热心人#'+Math.floor(Math.random()*9000+1000),text,time:Date.now()}];
+  await db.from('wishes').update({msgs}).eq('id',id);
+  inp.value='';
+  await loadAll();
+}
+
+// 认领
+function openClaim(id){
+  const w=allWishes.find(x=>x.id===id);if(!w||w.fulfilled)return;
+  claimId=id;
+  document.getElementById('mTitle').textContent='认领愿望';
+  document.getElementById('mBody').innerHTML=`
+    <p style="color:var(--text-sec);margin-bottom:12px;line-height:1.7">${esc(w.content)}</p>
+    ${w.contact?`<p style="color:var(--accent);font-size:0.88em;margin-bottom:12px">联系方式：${esc(w.contact)}</p>`
+    :'<p style="color:var(--text-dim);font-size:0.85em;margin-bottom:12px">许愿人未留联系方式，可通过留言沟通</p>'}
+    <textarea id="claimMsg" placeholder="给许愿人留句话（选填）" style="min-height:70px"></textarea>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn pri" onclick="confirmClaim()" style="flex:1">确认认领</button>
+      <button class="btn" onclick="closeModal()" style="flex:1">取消</button>
+    </div>`;
+  document.getElementById('overlay').classList.add('show');
+}
+function closeModal(){document.getElementById('overlay').classList.remove('show');claimId=null;}
+
+async function confirmClaim(){
+  if(!claimId)return;
+  const w=allWishes.find(x=>x.id===claimId);if(!w){closeModal();return;}
+  const msg=document.getElementById('claimMsg').value.trim();
+  const helper='好心人#'+Math.floor(Math.random()*9000+1000);
+  const msgs=[...(w.msgs||[])];
+  if(msg)msgs.push({from:helper,text:msg,time:Date.now()});
+  msgs.push({from:'系统',text:'这个愿望已被认领，感谢善意。',time:Date.now()});
+  await db.from('wishes').update({fulfilled:true,claimed_by:helper,msgs}).eq('id',claimId);
+  closeModal();toast('感谢你的善意');await loadAll();
+}
+
+async function delWish(id){
+  if(!confirm('确定删除这个愿望？'))return;
+  await db.from('wishes').delete().eq('id',id);
+  toast('已删除');await loadAll();
+}
+
+function viewDetail(id){
+  const w=allWishes.find(x=>x.id===id);if(!w)return;
+  document.getElementById('mTitle').textContent='愿望详情';
+  let html=`
+    <div style="margin-bottom:12px">
+      <span style="font-weight:500">${esc(w.name)}</span>
+      <span style="color:var(--text-dim);font-size:0.8em;margin-left:8px">${esc(w.city||'')}</span>
+      <span class="card-tag" style="margin-left:8px">${esc(w.cat)}</span>
+      ${w.fulfilled?'<span style="color:var(--green);font-size:0.8em;margin-left:8px">✓ 已实现</span>':''}
+    </div>
+    <p style="color:var(--text-sec);line-height:1.8;margin-bottom:16px">${esc(w.content)}</p>
+    <p style="color:var(--text-dim);font-size:0.8em;margin-bottom:16px">${timeAgo(w.created_at)} · ${w.likes||0} 人支持</p>`;
+  if(w.msgs&&w.msgs.length>0){
+    html+=`<div style="border-top:1px solid var(--border);padding-top:12px">`;
+    w.msgs.forEach(m=>{html+=`<div class="msg"><b>${esc(m.from)}</b>　${esc(m.text)}</div>`;});
+    html+=`</div>`;
+  }
+  html+=`<button class="btn" onclick="closeModal()" style="margin-top:16px;width:100%;justify-content:center">关闭</button>`;
+  document.getElementById('mBody').innerHTML=html;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function render(){
+  const search=document.getElementById('searchInput').value.trim().toLowerCase();
+  const sort=document.getElementById('sortBy').value;
+  const uid=getUid();
+  let filtered=[...allWishes];
+  if(curCat!=='全部')filtered=filtered.filter(w=>w.cat===curCat);
+  if(search)filtered=filtered.filter(w=>(w.content+w.name+(w.city||'')).toLowerCase().includes(search));
+  if(sort==='oldest')filtered.reverse();
+  else if(sort==='hot')filtered.sort((a,b)=>(b.likes||0)-(a.likes||0));
+
+  document.getElementById('sTotal').textContent=allWishes.length;
+  document.getElementById('sWaiting').textContent=allWishes.filter(w=>!w.fulfilled).length;
+  document.getElementById('sFulfilled').textContent=allWishes.filter(w=>w.fulfilled).length;
+
+  const list=document.getElementById('list');
+  const empty=document.getElementById('empty');
+  if(filtered.length===0){list.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+
+  list.innerHTML=filtered.map(w=>{
+    const liked=(w.liked_by||[]).includes(uid);
+    const msgs=w.msgs||[];
+    const msgsHtml=`<div class="msg-section">
+      ${msgs.slice(-3).map(m=>`<div class="msg"><b>${esc(m.from)}</b>　${esc(m.text)}</div>`).join('')}
+      ${msgs.length>3?`<div style="font-size:.75em;color:var(--text-dim);margin-top:4px">共${msgs.length}条 · <a href="#" onclick="viewDetail('${w.id}');return false" style="color:var(--accent);text-decoration:none">查看全部</a></div>`:''}
+      <div class="msg-input">
+        <input id="msg_${w.id}" placeholder="留言..." onkeydown="if(event.key==='Enter')addMsg('${w.id}')">
+        <button class="btn sm" onclick="addMsg('${w.id}')">发送</button>
+      </div></div>`;
+    return`<div class="card${w.fulfilled?' done':''}">
+      <div class="card-top">
+        <span class="card-author">${esc(w.name)}</span>
+        <div class="card-meta">
+          ${w.city?`<span class="card-city">${esc(w.city)}</span>`:''}
+          <span class="card-tag">${esc(w.cat)}</span>
+        </div>
+      </div>
+      <div class="card-body">${esc(w.content)}</div>
+      <div class="card-foot">
+        <span class="card-time">${timeAgo(w.created_at)}</span>
+        <div class="card-actions">
+          <span class="likes">${w.likes||0}</span>
+          <button class="btn sm${liked?' green':''}" onclick="like('${w.id}')">${liked?'♥ 已支持':'♡ 支持'}</button>
+          ${w.fulfilled?'<button class="btn sm done">✓ 已实现</button>':`<button class="btn sm green" onclick="openClaim('${w.id}')">认领</button>`}
+          <button class="btn sm" onclick="viewDetail('${w.id}')">详情</button>
+          <button class="btn sm" onclick="delWish('${w.id}')" style="color:var(--text-dim)">删除</button>
+        </div>
+      </div>
+      ${msgsHtml}
+    </div>`;
+  }).join('');
+}
+
+renderTags();loadAll();
+</script>
+</body>
+</html>
