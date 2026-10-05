@@ -350,8 +350,10 @@ async function doReg(e){
   const{data,error}=await db.auth.signUp({email,password:pass,options:{data:{display_name:name}}});
   if(error){showAuthErr(error.message);return;}
   if(data.user&&!data.session){
-    showAuthErr('注册成功！请查收验证邮件后登录（也可能直接登录成功，刷新试试）');
-    return;
+    // 验证已关闭的情况下不应走到这，但以防万一自动尝试登录
+    const{data:d2,error:e2}=await db.auth.signInWithPassword({email,password:pass});
+    if(e2){showAuthErr('注册成功，请切换到登录页登录');return;}
+    enterApp(d2.user);return;
   }
   enterApp(data.user);
 }
