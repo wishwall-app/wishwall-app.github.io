@@ -176,8 +176,8 @@ textarea{min-height:80px;resize:vertical;margin-bottom:4px}
 .empty,.loading{text-align:center;padding:40px 20px;color:var(--text-dim)}
 .loading{display:block}.empty{display:none}
 .empty-icon{font-size:2em;margin-bottom:8px;opacity:.4}
-.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--card);border:1px solid var(--accent);color:var(--accent);padding:10px 28px;border-radius:var(--radius);font-size:0.88em;z-index:200;transition:transform .35s;pointer-events:none}
-.toast.show{transform:translateX(-50%) translateY(0)}
+.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(200px);background:var(--card);border:1px solid var(--accent);color:var(--accent);padding:10px 28px;border-radius:var(--radius);font-size:0.88em;z-index:200;transition:transform .35s,opacity .35s;pointer-events:none;opacity:0}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 </style>
 </head>
