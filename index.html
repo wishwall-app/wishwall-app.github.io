@@ -153,6 +153,15 @@ textarea{min-height:80px;resize:vertical;margin-bottom:4px}
 .profile-stats{display:flex;gap:24px;padding:12px 0 24px;border-bottom:1px solid var(--border);margin-bottom:20px}
 .section-title{font-size:0.8em;font-weight:600;color:var(--text-sec);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px}
 
+/* 编辑资料弹窗 */
+.edit-profile-btn{background:none;border:none;color:var(--text-dim);font-size:0.82em;cursor:pointer;padding:2px 0}
+.edit-profile-btn:hover{color:var(--accent)}
+.emoji-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0}
+.emoji-opt{width:100%;aspect-ratio:1;border:2px solid var(--border);border-radius:var(--radius);background:var(--surface);font-size:1.5em;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.emoji-opt:hover{border-color:var(--accent-light);background:var(--accent-bg)}
+.emoji-opt.on{border-color:var(--accent);background:var(--accent-bg)}
+.card-avatar{margin-right:6px}
+
 /* 底部导航 */
 .bottom-nav{
   position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);
@@ -167,6 +176,41 @@ textarea{min-height:80px;resize:vertical;margin-bottom:4px}
 }
 .nav-item svg{transition:color .25s}
 .nav-item.on,.nav-item.on svg{color:var(--accent);stroke:currentColor}
+.unread-dot{position:absolute;top:6px;right:50%;transform:translateX(14px);width:8px;height:8px;background:var(--red);border-radius:50%}
+.unread-dot.hidden{display:none}
+
+/* 消息页 */
+.msg-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px}
+.msg-tab{flex:1;padding:10px;text-align:center;font-size:0.85em;color:var(--text-dim);cursor:pointer;border:none;border-bottom:2px solid transparent;background:none;font-family:inherit;transition:all .25s;position:relative}
+.msg-tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.msg-tab .tab-badge{display:inline-block;min-width:16px;height:16px;line-height:16px;text-align:center;font-size:0.65em;background:var(--red);color:#fff;border-radius:8px;margin-left:4px;padding:0 4px}
+.notif-item{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:background .2s}
+.notif-item:hover{background:var(--accent-bg)}
+.notif-item.unread{background:rgba(0,0,0,0.02)}
+.notif-icon{width:36px;height:36px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:1em;flex-shrink:0}
+.notif-body{flex:1;min-width:0}
+.notif-text{font-size:0.85em;color:var(--text-sec);line-height:1.5}
+.notif-text b{color:var(--text);font-weight:500}
+.notif-time{font-size:0.72em;color:var(--text-dim);margin-top:3px}
+.conv-item{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center;cursor:pointer;transition:background .2s}
+.conv-item:hover{background:var(--accent-bg)}
+.conv-avatar{width:40px;height:40px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.1em;flex-shrink:0}
+.conv-info{flex:1;min-width:0}
+.conv-name{font-size:0.88em;font-weight:500;display:flex;justify-content:space-between}
+.conv-preview{font-size:0.78em;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.conv-unread{width:8px;height:8px;background:var(--red);border-radius:50%;flex-shrink:0}
+.chat-header{display:flex;align-items:center;gap:12px;padding:16px 0 12px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.chat-back{background:none;border:none;font-size:1.2em;cursor:pointer;color:var(--text-sec);padding:4px}
+.chat-name{font-size:1em;font-weight:600}
+.chat-messages{min-height:200px;max-height:50vh;overflow-y:auto;padding:8px 0}
+.chat-bubble{max-width:75%;padding:10px 14px;border-radius:var(--radius-lg);margin-bottom:8px;font-size:0.88em;line-height:1.6;word-break:break-word}
+.chat-bubble.mine{background:var(--accent);color:var(--bg);margin-left:auto;border-bottom-right-radius:4px}
+.chat-bubble.theirs{background:var(--surface);color:var(--text);border-bottom-left-radius:4px}
+.chat-bubble .chat-time{font-size:0.68em;opacity:0.6;margin-top:4px;display:block}
+.chat-input-bar{display:flex;gap:8px;padding-top:12px;border-top:1px solid var(--border);margin-top:12px}
+.chat-input-bar input{flex:1}
+.send-dm-btn{background:none;border:none;color:var(--accent);font-size:0.82em;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit}
+.send-dm-btn:hover{color:var(--text)}
 
 /* 弹窗 */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);backdrop-filter:blur(4px);z-index:100;justify-content:center;align-items:center}
@@ -235,7 +279,7 @@ textarea{min-height:80px;resize:vertical;margin-bottom:4px}
     <div class="form-grid">
       <select id="fCat">
         <option value="学习">学习</option><option value="生活">生活</option>
-        <option value="医疗">医疗</option><option value="宠物">宠物</option>
+        <option value="医疗">医疗</option>
         <option value="梦想">梦想</option><option value="其他">其他</option>
       </select>
       <input type="text" id="fCity" placeholder="所在城市（选填）" maxlength="20">
@@ -272,6 +316,7 @@ textarea{min-height:80px;resize:vertical;margin-bottom:4px}
     <div class="profile-info">
       <h2 id="profileName">用户</h2>
       <p id="profileEmail">email</p>
+      <button class="edit-profile-btn" onclick="openEditProfile()">编辑资料</button>
     </div>
   </div>
   <div class="profile-stats">
@@ -289,6 +334,26 @@ textarea{min-height:80px;resize:vertical;margin-bottom:4px}
 </div>
 </div>
 
+<!-- 消息 -->
+<div class="page hidden" id="pageMsg">
+<div class="container">
+  <header><h1 style="font-size:1.2em">消息</h1></header>
+  <div class="msg-tabs">
+    <button class="msg-tab on" onclick="switchMsgTab('notif')">通知<span class="tab-badge hidden" id="notifBadge">0</span></button>
+    <button class="msg-tab" onclick="switchMsgTab('dm')">私信<span class="tab-badge hidden" id="dmBadge">0</span></button>
+  </div>
+  <div id="notifTab">
+    <div id="notifList"></div>
+    <div class="empty" id="notifEmpty" style="display:none"><div class="empty-icon">○</div><p>暂无通知</p></div>
+  </div>
+  <div id="dmTab" style="display:none">
+    <div id="convList"></div>
+    <div id="chatView" style="display:none"></div>
+    <div class="empty" id="dmEmpty" style="display:none"><div class="empty-icon">○</div><p>暂无私信</p></div>
+  </div>
+</div>
+</div>
+
 </div>
 
 <!-- 底部导航 -->
@@ -296,6 +361,11 @@ textarea{min-height:80px;resize:vertical;margin-bottom:4px}
   <button class="nav-item on" onclick="switchPage('home')">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     <span>首页</span>
+  </button>
+  <button class="nav-item" onclick="switchPage('msg')" style="position:relative">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    <span>消息</span>
+    <span class="unread-dot hidden" id="unreadDot"></span>
   </button>
   <button class="nav-item" onclick="switchPage('mine')">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -316,7 +386,7 @@ textarea{min-height:80px;resize:vertical;margin-bottom:4px}
 const SUPA_URL='https://rzrbbgvfihebshalwcnq.supabase.co';
 const SUPA_KEY='sb_publishable_9xwcxl8deKEr6NzNA4WiTQ_NZZodOP3';
 const db=window.supabase.createClient(SUPA_URL,SUPA_KEY);
-const CATS=['全部','学习','生活','医疗','宠物','梦想','其他'];
+const CATS=['全部','学习','生活','医疗','梦想','其他'];
 let curCat='全部',claimId=null,allWishes=[],curUser=null,curProfile=null;
 
 function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
@@ -381,15 +451,18 @@ function enterApp(user){
   curUser=user;
   curProfile={
     name:user.user_metadata?.display_name||user.email?.split('@')[0]||'用户',
-    email:user.email
+    email:user.email,
+    avatar:user.user_metadata?.avatar_emoji||''
   };
   document.getElementById('authPage').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('bottomNav').classList.remove('hidden');
   document.getElementById('profileName').textContent=curProfile.name;
   document.getElementById('profileEmail').textContent=curProfile.email;
-  document.getElementById('avatarChar').textContent=curProfile.name.charAt(0).toUpperCase();
+  document.getElementById('avatarChar').textContent=curProfile.avatar||curProfile.name.charAt(0).toUpperCase();
   loadAll();
+  loadMessages();
+  setInterval(()=>{if(curUser)loadMessages();},30000);
 }
 
 // 检查已登录
@@ -403,8 +476,13 @@ async function checkSession(){
 function switchPage(name){
   document.getElementById('pageHome').classList.toggle('hidden',name!=='home');
   document.getElementById('pageMine').classList.toggle('hidden',name!=='mine');
-  document.querySelectorAll('.nav-item').forEach((n,i)=>n.classList.toggle('on',name==='home'?i===0:i===1));
+  document.getElementById('pageMsg').classList.toggle('hidden',name!=='msg');
+  document.querySelectorAll('.nav-item').forEach((n,i)=>{
+    const match=(name==='home'&&i===0)||(name==='msg'&&i===1)||(name==='mine'&&i===2);
+    n.classList.toggle('on',match);
+  });
   if(name==='mine')renderMine();
+  if(name==='msg')loadMessages();
 }
 
 // ===== 数据操作 =====
@@ -434,33 +512,41 @@ async function postWish(){
     city:document.getElementById('fCity').value.trim(),
     likes:0,liked_by:[],fulfilled:false,claimed_by:null,msgs:[],
     created_at:Date.now(),
-    user_id:curUser.id,user_name:curProfile.name
+    user_id:curUser.id,user_name:curProfile.name,
+    user_avatar:curProfile.avatar||''
   };
-  const{error}=await db.from('wishes').insert(wish);
-  if(error){console.error(error);toast('发布失败');return;}
+  allWishes.unshift(wish);
   document.getElementById('fContent').value='';
   document.getElementById('fContact').value='';
   document.getElementById('fCity').value='';
-  updateCount();toast('愿望已发布');await loadAll();
+  updateCount();render();toast('愿望已发布');
+  const{error}=await db.from('wishes').insert(wish);
+  if(error){allWishes=allWishes.filter(x=>x.id!==wish.id);render();toast('发布失败');}
 }
 
 async function like(id){
   const w=allWishes.find(x=>x.id===id);if(!w||!curUser)return;
   const uid=curUser.id;
-  let likedBy=w.liked_by||[];let likes=w.likes||0;
-  if(likedBy.includes(uid)){likedBy=likedBy.filter(x=>x!==uid);likes=Math.max(0,likes-1);}
-  else{likedBy.push(uid);likes++;}
-  await db.from('wishes').update({likes,liked_by:likedBy}).eq('id',id);
-  await loadAll();
+  const oldLikes=w.likes,oldLikedBy=[...(w.liked_by||[])];
+  if(oldLikedBy.includes(uid)){w.liked_by=oldLikedBy.filter(x=>x!==uid);w.likes=Math.max(0,oldLikes-1);}
+  else{w.liked_by=[...oldLikedBy,uid];w.likes=(oldLikes||0)+1;}
+  render();
+  const{error}=await db.from('wishes').update({likes:w.likes,liked_by:w.liked_by}).eq('id',id);
+  if(error){w.likes=oldLikes;w.liked_by=oldLikedBy;render();toast('操作失败');}
+  else if(!oldLikedBy.includes(uid)&&w.user_id!==uid){sendNotification(w.user_id,'like',id,curProfile.name+' 支持了你的愿望');}
 }
 
 async function addMsg(id){
   const inp=document.getElementById('msg_'+id);if(!inp)return;
   const text=inp.value.trim();if(!text||!curUser)return;
   const w=allWishes.find(x=>x.id===id);if(!w)return;
-  const msgs=[...(w.msgs||[]),{from:curProfile.name,text,time:Date.now(),uid:curUser.id}];
-  await db.from('wishes').update({msgs}).eq('id',id);
-  inp.value='';await loadAll();
+  const newMsg={from:curProfile.name,text,time:Date.now(),uid:curUser.id};
+  const oldMsgs=[...(w.msgs||[])];
+  w.msgs=[...oldMsgs,newMsg];
+  inp.value='';render();
+  const{error}=await db.from('wishes').update({msgs:w.msgs}).eq('id',id);
+  if(error){w.msgs=oldMsgs;render();toast('发送失败');}
+  else if(w.user_id!==curUser.id){sendNotification(w.user_id,'message',id,curProfile.name+' 给你的愿望留言了');}
 }
 
 function openClaim(id){
@@ -484,11 +570,15 @@ async function confirmClaim(){
   if(!claimId||!curUser)return;
   const w=allWishes.find(x=>x.id===claimId);if(!w){closeModal();return;}
   const msg=document.getElementById('claimMsg').value.trim();
+  const oldFulfilled=w.fulfilled,oldClaimedBy=w.claimed_by,oldMsgs=[...(w.msgs||[])];
   const msgs=[...(w.msgs||[])];
   if(msg)msgs.push({from:curProfile.name,text:msg,time:Date.now(),uid:curUser.id});
   msgs.push({from:'系统',text:'这个愿望已被 '+curProfile.name+' 认领，感谢善意。',time:Date.now()});
-  await db.from('wishes').update({fulfilled:true,claimed_by:curUser.id,msgs}).eq('id',claimId);
-  closeModal();toast('感谢你的善意');await loadAll();
+  w.fulfilled=true;w.claimed_by=curUser.id;w.msgs=msgs;
+  closeModal();render();toast('感谢你的善意');
+  const{error}=await db.from('wishes').update({fulfilled:true,claimed_by:curUser.id,msgs}).eq('id',claimId);
+  if(error){w.fulfilled=oldFulfilled;w.claimed_by=oldClaimedBy;w.msgs=oldMsgs;render();toast('认领失败');}
+  else if(w.user_id!==curUser.id){sendNotification(w.user_id,'claim',claimId,curProfile.name+' 认领了你的愿望');}
 }
 
 async function delWish(id){
@@ -496,8 +586,10 @@ async function delWish(id){
   if(!w)return;
   if(w.user_id!==curUser?.id){toast('只能删除自己的愿望');return;}
   if(!confirm('确定删除这个愿望？'))return;
-  await db.from('wishes').delete().eq('id',id);
-  toast('已删除');await loadAll();
+  const idx=allWishes.indexOf(w);
+  allWishes.splice(idx,1);render();toast('已删除');
+  const{error}=await db.from('wishes').delete().eq('id',id);
+  if(error){allWishes.splice(idx,0,w);render();toast('删除失败');}
 }
 
 function viewDetail(id){
@@ -559,7 +651,7 @@ function buildCard(w,uid,showDel){
     </div></div>`;
   return`<div class="card${w.fulfilled?' done':''}">
     <div class="card-top">
-      <span class="card-author">${esc(w.name)}</span>
+      <span class="card-author">${w.user_avatar?`<span class="card-avatar">${esc(w.user_avatar)}</span>`:''}${w.user_id!==uid?`<button class="send-dm-btn" onclick="event.stopPropagation();openDMFromCard('${w.user_id}','${esc(w.name)}')">${esc(w.name)}</button>`:`${esc(w.name)}`}</span>
       <div class="card-meta">
         ${w.city?`<span class="card-city">${esc(w.city)}</span>`:''}
         <span class="card-tag">${esc(w.cat)}</span>
@@ -601,6 +693,211 @@ function renderMine(){
   const ce=document.getElementById('myClaimEmpty');
   if(myClaims.length===0){cl.innerHTML='';ce.style.display='block';}
   else{ce.style.display='none';cl.innerHTML=myClaims.map(w=>buildCard(w,uid,false)).join('');}
+}
+
+// ===== 通知系统 =====
+let allNotifs=[],allDMs=[];
+
+async function loadMessages(){
+  if(!curUser)return;
+  await Promise.all([loadNotifs(),loadDMs()]);
+  updateUnreadDot();
+}
+
+async function loadNotifs(){
+  const{data,error}=await db.from('notifications').select('*').eq('user_id',curUser.id).order('created_at',{ascending:false}).limit(50);
+  if(error){allNotifs=[];return;}
+  allNotifs=data||[];
+  renderNotifs();
+}
+
+async function loadDMs(){
+  const{data,error}=await db.from('direct_messages').select('*').or(`from_id.eq.${curUser.id},to_id.eq.${curUser.id}`).order('created_at',{ascending:false}).limit(200);
+  if(error){allDMs=[];return;}
+  allDMs=data||[];
+  renderConvList();
+}
+
+function updateUnreadDot(){
+  const unreadN=allNotifs.filter(n=>!n.read).length;
+  const unreadD=allDMs.filter(m=>m.to_id===curUser.id&&!m.read).length;
+  const dot=document.getElementById('unreadDot');
+  dot.classList.toggle('hidden',unreadN+unreadD===0);
+  const nb=document.getElementById('notifBadge');
+  if(unreadN>0){nb.textContent=unreadN;nb.classList.remove('hidden');}else{nb.classList.add('hidden');}
+  const db2=document.getElementById('dmBadge');
+  if(unreadD>0){db2.textContent=unreadD;db2.classList.remove('hidden');}else{db2.classList.add('hidden');}
+}
+
+function switchMsgTab(tab){
+  document.querySelectorAll('.msg-tab').forEach((t,i)=>t.classList.toggle('on',tab==='notif'?i===0:i===1));
+  document.getElementById('notifTab').style.display=tab==='notif'?'block':'none';
+  document.getElementById('dmTab').style.display=tab==='dm'?'block':'none';
+  if(tab==='notif')renderNotifs();
+  if(tab==='dm'){renderConvList();document.getElementById('chatView').style.display='none';}
+}
+
+function renderNotifs(){
+  const list=document.getElementById('notifList');
+  const empty=document.getElementById('notifEmpty');
+  if(allNotifs.length===0){list.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  const icons={like:'♡',claim:'✓',message:'💬',dm:'✉'};
+  list.innerHTML=allNotifs.map(n=>`
+    <div class="notif-item${n.read?'':' unread'}" onclick="readNotif('${n.id}','${esc(n.wish_id||'')}')">
+      <div class="notif-icon">${icons[n.type]||'•'}</div>
+      <div class="notif-body">
+        <div class="notif-text"><b>${esc(n.from_name||'')}</b> ${esc(n.content||'')}</div>
+        <div class="notif-time">${timeAgo(n.created_at)}</div>
+      </div>
+    </div>`).join('');
+}
+
+async function readNotif(id,wishId){
+  const n=allNotifs.find(x=>String(x.id)===String(id));
+  if(n&&!n.read){
+    n.read=true;renderNotifs();updateUnreadDot();
+    await db.from('notifications').update({read:true}).eq('id',id);
+  }
+  if(wishId){const w=allWishes.find(x=>x.id===wishId);if(w)viewDetail(wishId);}
+}
+
+async function sendNotification(userId,type,wishId,content){
+  if(!curUser||userId===curUser.id)return;
+  await db.from('notifications').insert({
+    user_id:userId,type,wish_id:wishId,
+    from_name:curProfile.name,from_id:curUser.id,
+    content,read:false,created_at:Date.now()
+  });
+}
+
+// ===== 私信系统 =====
+let curChatUser=null;
+
+function getConversations(){
+  if(!curUser)return[];
+  const convMap={};
+  allDMs.forEach(m=>{
+    const otherId=m.from_id===curUser.id?m.to_id:m.from_id;
+    const otherName=m.from_id===curUser.id?m.to_name:m.from_name;
+    if(!convMap[otherId]){convMap[otherId]={userId:otherId,name:otherName,lastMsg:m,unread:0};}
+    if(m.to_id===curUser.id&&!m.read)convMap[otherId].unread++;
+  });
+  return Object.values(convMap).sort((a,b)=>b.lastMsg.created_at-a.lastMsg.created_at);
+}
+
+function renderConvList(){
+  const convs=getConversations();
+  const list=document.getElementById('convList');
+  const empty=document.getElementById('dmEmpty');
+  const chatView=document.getElementById('chatView');
+  if(chatView.style.display!=='none')return;
+  if(convs.length===0){list.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  list.innerHTML=convs.map(c=>`
+    <div class="conv-item" onclick="openChat('${c.userId}','${esc(c.name)}')">
+      <div class="conv-avatar">${esc(c.name.charAt(0).toUpperCase())}</div>
+      <div class="conv-info">
+        <div class="conv-name"><span>${esc(c.name)}</span><span style="font-size:0.72em;color:var(--text-dim);font-weight:400">${timeAgo(c.lastMsg.created_at)}</span></div>
+        <div class="conv-preview">${esc(c.lastMsg.content)}</div>
+      </div>
+      ${c.unread>0?'<span class="conv-unread"></span>':''}
+    </div>`).join('');
+}
+
+function openChat(userId,name){
+  curChatUser={id:userId,name};
+  document.getElementById('convList').style.display='none';
+  document.getElementById('dmEmpty').style.display='none';
+  const chatView=document.getElementById('chatView');
+  chatView.style.display='block';
+  renderChat();
+  markDMsRead(userId);
+}
+
+function closeChat(){
+  curChatUser=null;
+  document.getElementById('chatView').style.display='none';
+  document.getElementById('convList').style.display='block';
+  renderConvList();
+}
+
+function renderChat(){
+  if(!curChatUser)return;
+  const msgs=allDMs.filter(m=>(m.from_id===curChatUser.id&&m.to_id===curUser.id)||(m.to_id===curChatUser.id&&m.from_id===curUser.id)).reverse();
+  const chatView=document.getElementById('chatView');
+  chatView.innerHTML=`
+    <div class="chat-header">
+      <button class="chat-back" onclick="closeChat()">←</button>
+      <span class="chat-name">${esc(curChatUser.name)}</span>
+    </div>
+    <div class="chat-messages" id="chatMsgs">
+      ${msgs.length===0?'<div style="text-align:center;color:var(--text-dim);padding:40px 0;font-size:0.85em">开始聊天吧</div>':''}
+      ${msgs.map(m=>`<div class="chat-bubble ${m.from_id===curUser.id?'mine':'theirs'}">${esc(m.content)}<span class="chat-time">${timeAgo(m.created_at)}</span></div>`).join('')}
+    </div>
+    <div class="chat-input-bar">
+      <input type="text" id="dmInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendDM()">
+      <button class="btn sm pri" onclick="sendDM()">发送</button>
+    </div>`;
+  const el=document.getElementById('chatMsgs');
+  if(el)el.scrollTop=el.scrollHeight;
+}
+
+async function sendDM(){
+  const inp=document.getElementById('dmInput');if(!inp)return;
+  const text=inp.value.trim();if(!text||!curUser||!curChatUser)return;
+  const msg={from_id:curUser.id,to_id:curChatUser.id,from_name:curProfile.name,to_name:curChatUser.name,content:text,read:false,created_at:Date.now()};
+  allDMs.unshift(msg);inp.value='';renderChat();updateUnreadDot();
+  const{error}=await db.from('direct_messages').insert(msg);
+  if(error){allDMs=allDMs.filter(x=>x!==msg);renderChat();toast('发送失败');}
+  else{await sendNotification(curChatUser.id,'dm',null,curProfile.name+' 给你发了一条私信');}
+}
+
+async function markDMsRead(userId){
+  const unread=allDMs.filter(m=>m.from_id===userId&&m.to_id===curUser.id&&!m.read);
+  unread.forEach(m=>m.read=true);
+  updateUnreadDot();
+  if(unread.length>0)await db.from('direct_messages').update({read:true}).eq('from_id',userId).eq('to_id',curUser.id).eq('read',false);
+}
+
+function openDMFromCard(userId,userName){
+  switchPage('msg');
+  setTimeout(()=>{switchMsgTab('dm');openChat(userId,userName);},100);
+}
+
+// ===== 编辑资料 =====
+const AVATARS=['🐱','🐼','🦊','🐰','🐻','🌸','🌙','⭐','🎀','🎵','🌈','🍀','🎂','🔥','💎','🎮','🌻','🍄','🧸','🎯'];
+let editAvatar='';
+
+function openEditProfile(){
+  editAvatar=curProfile.avatar||'';
+  document.getElementById('mTitle').textContent='编辑资料';
+  document.getElementById('mBody').innerHTML=`
+    <div class="auth-field"><label>昵称</label><input type="text" id="editName" value="${esc(curProfile.name)}" maxlength="20"></div>
+    <div style="font-size:0.78em;color:var(--text-sec);margin-bottom:8px">选择头像</div>
+    <div class="emoji-grid">${AVATARS.map(e=>`<button class="emoji-opt${editAvatar===e?' on':''}" onclick="pickAvatar(this,'${e}')">${e}</button>`).join('')}</div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn pri" onclick="saveProfile()" style="flex:1">保存</button>
+      <button class="btn" onclick="closeModal()" style="flex:1">取消</button>
+    </div>`;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function pickAvatar(btn,emoji){
+  document.querySelectorAll('.emoji-opt').forEach(b=>b.classList.remove('on'));
+  if(editAvatar===emoji){editAvatar='';} else{editAvatar=emoji;btn.classList.add('on');}
+}
+
+async function saveProfile(){
+  const newName=document.getElementById('editName').value.trim();
+  if(!newName){toast('昵称不能为空');return;}
+  const{error}=await db.auth.updateUser({data:{display_name:newName,avatar_emoji:editAvatar}});
+  if(error){toast('保存失败');return;}
+  curProfile.name=newName;curProfile.avatar=editAvatar;
+  document.getElementById('profileName').textContent=newName;
+  document.getElementById('avatarChar').textContent=editAvatar||newName.charAt(0).toUpperCase();
+  allWishes.forEach(w=>{if(w.user_id===curUser.id){w.name=newName;w.user_name=newName;w.user_avatar=editAvatar;}});
+  closeModal();toast('资料已更新');render();
 }
 
 // ===== 启动 =====
