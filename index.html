@@ -400,10 +400,9 @@ async function supaUpdate(table,data,filters){
   const sess=await db.auth.getSession();
   const token=sess?.data?.session?.access_token||SUPA_KEY;
   const res=await fetch(SUPA_URL+'/rest/v1/'+table+'?'+params,{
-    method:'POST',headers:{
+    method:'PATCH',headers:{
       'apikey':SUPA_KEY,'Authorization':'Bearer '+token,
-      'Content-Type':'application/json','Prefer':'return=minimal',
-      'X-HTTP-Method-Override':'PATCH'
+      'Content-Type':'application/json','Prefer':'return=minimal'
     },body:JSON.stringify(data)
   });
   if(!res.ok){const e=await res.json().catch(()=>({}));return{error:{message:e.message||res.statusText}};}
