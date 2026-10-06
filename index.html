@@ -542,7 +542,7 @@ async function like(id){
   else{w.liked_by=[...oldLikedBy,uid];w.likes=(oldLikes||0)+1;}
   render();
   const{error}=await db.from('wishes').update({likes:w.likes,liked_by:w.liked_by}).eq('id',id);
-  if(error){w.likes=oldLikes;w.liked_by=oldLikedBy;render();toast('操作失败');}
+  if(error){console.error('like error:',error);w.likes=oldLikes;w.liked_by=oldLikedBy;render();toast('操作失败：'+error.message);}
   else if(!oldLikedBy.includes(uid)&&w.user_id!==uid){sendNotification(w.user_id,'like',id,curProfile.name+' 支持了你的愿望');}
 }
 
@@ -561,6 +561,7 @@ async function addMsg(id){
 
 function openClaim(id){
   const w=allWishes.find(x=>x.id===id);if(!w||w.fulfilled)return;
+  if(w.user_id===curUser?.id){toast('不能认领自己的愿望哦');return;}
   claimId=id;
   document.getElementById('mTitle').textContent='认领愿望';
   document.getElementById('mBody').innerHTML=`
@@ -663,7 +664,7 @@ function buildCard(w,uid,showDel){
     </div></div>`;
   return`<div class="card${w.fulfilled?' done':''}">
     <div class="card-top">
-      <span class="card-author">${w.user_avatar?`<span class="card-avatar">${esc(w.user_avatar)}</span>`:''}${w.user_id!==uid?`<button class="send-dm-btn" onclick="event.stopPropagation();openDMFromCard('${w.user_id}','${esc(w.name)}')">${esc(w.name)}</button>`:`${esc(w.name)}`}</span>
+      <span class="card-author">${w.user_avatar?`<span class="card-avatar">${esc(w.user_avatar)}</span>`:''}${w.user_id!==uid?`<button class="send-dm-btn" onclick="event.stopPropagation();openDMFromCard('${w.user_id}','${(w.name||'用户').replace(/'/g,"\\'")}')">${esc(w.name)}</button>`:`${esc(w.name)}`}</span>
       <div class="card-meta">
         ${w.city?`<span class="card-city">${esc(w.city)}</span>`:''}
         <span class="card-tag">${esc(w.cat)}</span>
@@ -768,10 +769,11 @@ function renderNotifs(){
 
 async function readNotif(id,wishId){
   const nid=Number(id);
-  const n=allNotifs.find(x=>x.id===nid);
+  const n=allNotifs.find(x=>Number(x.id)===nid);
   if(n&&!n.read){
     n.read=true;renderNotifs();updateUnreadDot();
-    await db.from('notifications').update({read:true}).eq('id',nid);
+    const{error}=await db.from('notifications').update({read:true}).eq('id',nid);
+    if(error)console.error('readNotif error:',error);
   }
   if(wishId){const w=allWishes.find(x=>x.id===wishId);if(w)viewDetail(wishId);}
 }
@@ -793,7 +795,8 @@ function getConversations(){
   const convMap={};
   allDMs.forEach(m=>{
     const otherId=m.from_id===curUser.id?m.to_id:m.from_id;
-    const otherName=m.from_id===curUser.id?m.to_name:m.from_name;
+    const otherName=m.from_id===curUser.id?(m.to_name||'用户'):(m.from_name||'用户');
+    if(!otherId)return;
     if(!convMap[otherId]){convMap[otherId]={userId:otherId,name:otherName,lastMsg:m,unread:0};}
     if(m.to_id===curUser.id&&!m.read)convMap[otherId].unread++;
   });
@@ -808,15 +811,18 @@ function renderConvList(){
   if(chatView.style.display!=='none')return;
   if(convs.length===0){list.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
-  list.innerHTML=convs.map(c=>`
-    <div class="conv-item" onclick="openChat('${c.userId}','${esc(c.name)}')">
-      <div class="conv-avatar">${esc(c.name.charAt(0).toUpperCase())}</div>
+  list.innerHTML=convs.map(c=>{
+    const safeName=esc(c.name||'用户');
+    const safeNameAttr=(c.name||'用户').replace(/'/g,"\\'");
+    return`
+    <div class="conv-item" onclick="openChat('${c.userId}','${safeNameAttr}')">
+      <div class="conv-avatar">${esc((c.name||'?').charAt(0).toUpperCase())}</div>
       <div class="conv-info">
-        <div class="conv-name"><span>${esc(c.name)}</span><span style="font-size:0.72em;color:var(--text-dim);font-weight:400">${timeAgo(c.lastMsg.created_at)}</span></div>
-        <div class="conv-preview">${esc(c.lastMsg.content)}</div>
+        <div class="conv-name"><span>${safeName}</span><span style="font-size:0.72em;color:var(--text-dim);font-weight:400">${timeAgo(c.lastMsg.created_at)}</span></div>
+        <div class="conv-preview">${esc(c.lastMsg.content||'')}</div>
       </div>
       ${c.unread>0?'<span class="conv-unread"></span>':''}
-    </div>`).join('');
+    </div>`;}).join('');
 }
 
 function openChat(userId,name){
@@ -847,7 +853,7 @@ function renderChat(){
     </div>
     <div class="chat-messages" id="chatMsgs">
       ${msgs.length===0?'<div style="text-align:center;color:var(--text-dim);padding:40px 0;font-size:0.85em">开始聊天吧</div>':''}
-      ${msgs.map(m=>`<div class="chat-bubble ${m.from_id===curUser.id?'mine':'theirs'}">${esc(m.content)}<span class="chat-time">${timeAgo(m.created_at)}</span></div>`).join('')}
+      ${msgs.map(m=>`<div class="chat-bubble ${m.from_id===curUser.id?'mine':'theirs'}">${esc(m.content||'')}<span class="chat-time">${timeAgo(m.created_at)}</span></div>`).join('')}
     </div>
     <div class="chat-input-bar">
       <input type="text" id="dmInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendDM()">
@@ -912,6 +918,7 @@ async function saveProfile(){
   document.getElementById('avatarChar').textContent=editAvatar||newName.charAt(0).toUpperCase();
   allWishes.forEach(w=>{if(w.user_id===curUser.id){w.name=newName;w.user_name=newName;w.user_avatar=editAvatar;}});
   closeModal();toast('资料已更新');render();
+  await db.from('wishes').update({name:newName,user_name:newName,user_avatar:editAvatar}).eq('user_id',curUser.id);
 }
 
 // ===== 启动 =====
