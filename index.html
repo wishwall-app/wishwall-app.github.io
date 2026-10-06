@@ -135,6 +135,7 @@ textarea{min-height:80px;resize:vertical;margin-bottom:4px}
 .card-tag{font-size:0.7em;padding:2px 10px;border-radius:10px;background:var(--accent-bg);color:var(--accent)}
 .card-city{font-size:0.7em;color:var(--text-dim)}
 .card-body{color:var(--text-sec);font-size:0.9em;line-height:1.7;margin-bottom:12px;word-break:break-word}
+.card-title{font-size:0.95em;font-weight:600;color:var(--text);margin-bottom:6px}
 .card-foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .card-time{font-size:0.75em;color:var(--text-dim)}
 .card-actions{display:flex;gap:6px;align-items:center}
@@ -276,6 +277,7 @@ textarea{min-height:80px;resize:vertical;margin-bottom:4px}
   </div>
   <div class="panel">
     <div class="panel-title">许一个愿望</div>
+    <input type="text" id="fTitle" placeholder="愿望标题（一句话概括）" maxlength="30" style="margin-bottom:10px">
     <textarea id="fContent" placeholder="描述你的愿望，说说原因，让好心人更了解你" maxlength="500" oninput="updateCount()"></textarea>
     <div class="form-grid">
       <select id="fCat">
@@ -502,12 +504,14 @@ function renderTags(){
 }
 
 async function postWish(){
+  const title=document.getElementById('fTitle').value.trim();
   const content=document.getElementById('fContent').value.trim();
+  if(!title){toast('给愿望取个标题吧');return;}
   if(!content){toast('写点什么再许愿吧');return;}
   if(!curUser){toast('请先登录');return;}
   const wish={
     id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
-    name:curProfile.name,
+    name:curProfile.name,title,
     cat:document.getElementById('fCat').value,
     content,contact:document.getElementById('fContact').value.trim(),
     city:document.getElementById('fCity').value.trim(),
@@ -517,6 +521,7 @@ async function postWish(){
     user_avatar:curProfile.avatar||''
   };
   allWishes.unshift(wish);
+  document.getElementById('fTitle').value='';
   document.getElementById('fContent').value='';
   document.getElementById('fContact').value='';
   document.getElementById('fCity').value='';
@@ -555,6 +560,7 @@ function openClaim(id){
   claimId=id;
   document.getElementById('mTitle').textContent='认领愿望';
   document.getElementById('mBody').innerHTML=`
+    ${w.title?`<p style="font-weight:600;margin-bottom:8px">${esc(w.title)}</p>`:''}
     <p style="color:var(--text-sec);margin-bottom:12px;line-height:1.7">${esc(w.content)}</p>
     ${w.contact?`<p style="color:var(--accent);font-size:0.88em;margin-bottom:12px">联系方式：${esc(w.contact)}</p>`
     :'<p style="color:var(--text-dim);font-size:0.85em;margin-bottom:12px">许愿人未留联系方式，可通过留言沟通</p>'}
@@ -603,6 +609,7 @@ function viewDetail(id){
       <span class="card-tag" style="margin-left:8px">${esc(w.cat)}</span>
       ${w.fulfilled?'<span style="color:var(--green);font-size:0.8em;margin-left:8px">✓ 已实现</span>':''}
     </div>
+    ${w.title?`<p style="font-weight:600;margin-bottom:8px">${esc(w.title)}</p>`:''}
     <p style="color:var(--text-sec);line-height:1.8;margin-bottom:16px">${esc(w.content)}</p>
     <p style="color:var(--text-dim);font-size:0.8em;margin-bottom:16px">${timeAgo(w.created_at)} · ${w.likes||0} 人支持</p>`;
   const msgs=w.msgs||[];
@@ -623,7 +630,7 @@ function render(){
   const uid=curUser?.id;
   let filtered=[...allWishes];
   if(curCat!=='全部')filtered=filtered.filter(w=>w.cat===curCat);
-  if(search)filtered=filtered.filter(w=>(w.content+w.name+(w.city||'')).toLowerCase().includes(search));
+  if(search)filtered=filtered.filter(w=>((w.title||'')+w.content+w.name+(w.city||'')).toLowerCase().includes(search));
   if(sort==='oldest')filtered.reverse();
   else if(sort==='hot')filtered.sort((a,b)=>(b.likes||0)-(a.likes||0));
 
@@ -658,6 +665,7 @@ function buildCard(w,uid,showDel){
         <span class="card-tag">${esc(w.cat)}</span>
       </div>
     </div>
+    ${w.title?`<div class="card-title">${esc(w.title)}</div>`:''}
     <div class="card-body">${esc(w.content)}</div>
     <div class="card-foot">
       <span class="card-time">${timeAgo(w.created_at)}</span>
