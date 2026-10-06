@@ -234,7 +234,7 @@ textarea{min-height:80px;resize:vertical;margin-bottom:4px}
 <div class="glow"></div>
 
 <!-- ===== 登录注册页 ===== -->
-<div class="auth-page" id="authPage">
+<div class="auth-page hidden" id="authPage">
 <div class="auth-box">
   <div class="auth-logo">
     <h1>WISH WALL</h1>
@@ -425,11 +425,12 @@ async function doReg(e){
   const{data,error}=await db.auth.signUp({email,password:pass,options:{data:{display_name:name}}});
   if(error){showAuthErr(error.message);return;}
   if(data.user&&!data.session){
-    // 验证已关闭的情况下不应走到这，但以防万一自动尝试登录
     const{data:d2,error:e2}=await db.auth.signInWithPassword({email,password:pass});
     if(e2){showAuthErr('注册成功，请切换到登录页登录');return;}
+    await db.from('profiles').upsert({user_id:d2.user.id,display_name:name,avatar_emoji:'',updated_at:Date.now()});
     enterApp(d2.user);return;
   }
+  await db.from('profiles').upsert({user_id:data.user.id,display_name:name,avatar_emoji:'',updated_at:Date.now()});
   enterApp(data.user);
 }
 
@@ -450,13 +451,16 @@ async function doLogout(){
   document.getElementById('authPage').classList.remove('hidden');
 }
 
-function enterApp(user){
+async function enterApp(user){
   curUser=user;
-  curProfile={
-    name:user.user_metadata?.display_name||user.email?.split('@')[0]||'用户',
-    email:user.email,
-    avatar:user.user_metadata?.avatar_emoji||''
-  };
+  const fallbackName=user.user_metadata?.display_name||user.email?.split('@')[0]||'用户';
+  const{data:prof}=await db.from('profiles').select('*').eq('user_id',user.id).single();
+  if(prof){
+    curProfile={name:prof.display_name,email:user.email,avatar:prof.avatar_emoji||''};
+  }else{
+    curProfile={name:fallbackName,email:user.email,avatar:user.user_metadata?.avatar_emoji||''};
+    await db.from('profiles').upsert({user_id:user.id,display_name:curProfile.name,avatar_emoji:curProfile.avatar,updated_at:Date.now()});
+  }
   document.getElementById('authPage').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('bottomNav').classList.remove('hidden');
@@ -465,7 +469,7 @@ function enterApp(user){
   document.getElementById('avatarChar').textContent=curProfile.avatar||curProfile.name.charAt(0).toUpperCase();
   loadAll();
   loadMessages();
-  setInterval(()=>{if(curUser)loadMessages();},30000);
+  if(!window._msgInterval){window._msgInterval=setInterval(()=>{if(curUser)loadMessages();},30000);}
 }
 
 // 检查已登录
@@ -763,10 +767,11 @@ function renderNotifs(){
 }
 
 async function readNotif(id,wishId){
-  const n=allNotifs.find(x=>String(x.id)===String(id));
+  const nid=Number(id);
+  const n=allNotifs.find(x=>x.id===nid);
   if(n&&!n.read){
     n.read=true;renderNotifs();updateUnreadDot();
-    await db.from('notifications').update({read:true}).eq('id',id);
+    await db.from('notifications').update({read:true}).eq('id',nid);
   }
   if(wishId){const w=allWishes.find(x=>x.id===wishId);if(w)viewDetail(wishId);}
 }
@@ -900,7 +905,7 @@ function pickAvatar(btn,emoji){
 async function saveProfile(){
   const newName=document.getElementById('editName').value.trim();
   if(!newName){toast('昵称不能为空');return;}
-  const{error}=await db.auth.updateUser({data:{display_name:newName,avatar_emoji:editAvatar}});
+  const{error}=await db.from('profiles').upsert({user_id:curUser.id,display_name:newName,avatar_emoji:editAvatar,updated_at:Date.now()});
   if(error){console.error('saveProfile error:',error);toast('保存失败：'+error.message);return;}
   curProfile.name=newName;curProfile.avatar=editAvatar;
   document.getElementById('profileName').textContent=newName;
