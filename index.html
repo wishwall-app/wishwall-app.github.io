@@ -527,7 +527,7 @@ async function postWish(){
   document.getElementById('fCity').value='';
   updateCount();render();toast('愿望已发布');
   const{error}=await db.from('wishes').insert(wish);
-  if(error){allWishes=allWishes.filter(x=>x.id!==wish.id);render();toast('发布失败');}
+  if(error){console.error('postWish error:',error);allWishes=allWishes.filter(x=>x.id!==wish.id);render();toast('发布失败：'+error.message);}
 }
 
 async function like(id){
@@ -901,7 +901,7 @@ async function saveProfile(){
   const newName=document.getElementById('editName').value.trim();
   if(!newName){toast('昵称不能为空');return;}
   const{error}=await db.auth.updateUser({data:{display_name:newName,avatar_emoji:editAvatar}});
-  if(error){toast('保存失败');return;}
+  if(error){console.error('saveProfile error:',error);toast('保存失败：'+error.message);return;}
   curProfile.name=newName;curProfile.avatar=editAvatar;
   document.getElementById('profileName').textContent=newName;
   document.getElementById('avatarChar').textContent=editAvatar||newName.charAt(0).toUpperCase();
