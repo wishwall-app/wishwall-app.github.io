@@ -486,7 +486,9 @@ async function enterApp(user){
   document.getElementById('avatarChar').textContent=curProfile.avatar||curProfile.name.charAt(0).toUpperCase();
   loadAll();
   loadMessages();
-  if(!window._msgInterval){window._msgInterval=setInterval(()=>{if(curUser)loadMessages();},30000);}
+  if(!window._msgInterval){window._msgInterval=setInterval(()=>{if(curUser)loadMessages();},10000);}
+  if(!window._wishInterval){window._wishInterval=setInterval(()=>{if(curUser)loadAll();},15000);}
+  startRealtime();
 }
 
 // 检查已登录
@@ -764,8 +766,23 @@ function switchMsgTab(tab){
   document.querySelectorAll('.msg-tab').forEach((t,i)=>t.classList.toggle('on',tab==='notif'?i===0:i===1));
   document.getElementById('notifTab').style.display=tab==='notif'?'block':'none';
   document.getElementById('dmTab').style.display=tab==='dm'?'block':'none';
-  if(tab==='notif')renderNotifs();
+  if(tab==='notif'){renderNotifs();markAllNotifsRead();}
   if(tab==='dm'){renderConvList();document.getElementById('chatView').style.display='none';}
+}
+
+async function markAllNotifsRead(){
+  const unread=allNotifs.filter(n=>!n.read);
+  if(unread.length===0)return;
+  unread.forEach(n=>n.read=true);
+  renderNotifs();updateUnreadDot();
+  try{
+    const sess=await db.auth.getSession();
+    const token=sess?.data?.session?.access_token||SUPA_KEY;
+    await fetch(SUPA_URL+'/rest/v1/notifications?user_id=eq.'+curUser.id+'&read=eq.false',{
+      method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:'{"read":true}'
+    });
+  }catch(e){console.error('markAllNotifsRead error:',e);}
 }
 
 function renderNotifs(){
@@ -789,8 +806,14 @@ async function readNotif(id,wishId){
   const n=allNotifs.find(x=>Number(x.id)===nid);
   if(n&&!n.read){
     n.read=true;renderNotifs();updateUnreadDot();
-    const{error}=await supaUpdate('notifications',{read:true},{id:'eq.'+nid});
-    if(error)console.error('readNotif error:',error);
+    try{
+      const sess=await db.auth.getSession();
+      const token=sess?.data?.session?.access_token||SUPA_KEY;
+      await fetch(SUPA_URL+'/rest/v1/notifications?id=eq.'+nid,{
+        method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:'{"read":true}'
+      });
+    }catch(e){console.error('readNotif fetch error:',e);}
   }
   if(wishId){const w=allWishes.find(x=>x.id===wishId);if(w)viewDetail(wishId);}
 }
@@ -894,7 +917,16 @@ async function markDMsRead(userId){
   const unread=allDMs.filter(m=>m.from_id===userId&&m.to_id===curUser.id&&!m.read);
   unread.forEach(m=>m.read=true);
   updateUnreadDot();
-  if(unread.length>0)await supaUpdate('direct_messages',{read:true},{from_id:'eq.'+userId,to_id:'eq.'+curUser.id,read:'eq.false'});
+  if(unread.length>0){
+    try{
+      const sess=await db.auth.getSession();
+      const token=sess?.data?.session?.access_token||SUPA_KEY;
+      await fetch(SUPA_URL+'/rest/v1/direct_messages?from_id=eq.'+userId+'&to_id=eq.'+curUser.id+'&read=eq.false',{
+        method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:'{"read":true}'
+      });
+    }catch(e){console.error('markDMsRead error:',e);}
+  }
 }
 
 function openDMFromCard(userId,userName){
@@ -936,6 +968,15 @@ async function saveProfile(){
   allWishes.forEach(w=>{if(w.user_id===curUser.id){w.name=newName;w.user_name=newName;w.user_avatar=editAvatar;}});
   closeModal();toast('资料已更新');render();
   await supaUpdate('wishes',{name:newName,user_name:newName,user_avatar:editAvatar},{user_id:'eq.'+curUser.id});
+}
+
+function startRealtime(){
+  if(window._realtimeSub)return;
+  window._realtimeSub=db.channel('sync')
+    .on('postgres_changes',{event:'*',schema:'public',table:'wishes'},()=>loadAll())
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:'user_id=eq.'+curUser.id},()=>loadNotifs())
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'direct_messages'},()=>loadDMs())
+    .subscribe();
 }
 
 // ===== 启动 =====
