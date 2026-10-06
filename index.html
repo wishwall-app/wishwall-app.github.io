@@ -395,20 +395,6 @@ const db=window.supabase.createClient(SUPA_URL,SUPA_KEY);
 const CATS=['全部','学习','生活','医疗','梦想','其他'];
 let curCat='全部',claimId=null,allWishes=[],curUser=null,curProfile=null;
 
-async function supaUpdate(table,data,filters){
-  const params=new URLSearchParams(filters);
-  const sess=await db.auth.getSession();
-  const token=sess?.data?.session?.access_token||SUPA_KEY;
-  const res=await fetch(SUPA_URL+'/rest/v1/'+table+'?'+params,{
-    method:'PATCH',headers:{
-      'apikey':SUPA_KEY,'Authorization':'Bearer '+token,
-      'Content-Type':'application/json','Prefer':'return=minimal'
-    },body:JSON.stringify(data)
-  });
-  if(!res.ok){const e=await res.json().catch(()=>({}));return{error:{message:e.message||res.statusText}};}
-  return{error:null};
-}
-
 function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 function timeAgo(ts){
@@ -560,7 +546,7 @@ async function like(id){
   if(oldLikedBy.includes(uid)){w.liked_by=oldLikedBy.filter(x=>x!==uid);w.likes=Math.max(0,oldLikes-1);}
   else{w.liked_by=[...oldLikedBy,uid];w.likes=(oldLikes||0)+1;}
   render();
-  const{error}=await supaUpdate('wishes',{likes:w.likes,liked_by:w.liked_by},{id:'eq.'+id});
+  const{error}=await db.rpc('update_wish',{wish_id:id,payload:{likes:w.likes,liked_by:w.liked_by}});
   if(error){console.error('like error:',error);w.likes=oldLikes;w.liked_by=oldLikedBy;render();toast('操作失败：'+error.message);}
   else if(!oldLikedBy.includes(uid)&&w.user_id!==uid){sendNotification(w.user_id,'like',id,curProfile.name+' 支持了你的愿望');}
 }
@@ -573,7 +559,7 @@ async function addMsg(id){
   const oldMsgs=[...(w.msgs||[])];
   w.msgs=[...oldMsgs,newMsg];
   inp.value='';render();
-  const{error}=await supaUpdate('wishes',{msgs:w.msgs},{id:'eq.'+id});
+  const{error}=await db.rpc('update_wish',{wish_id:id,payload:{msgs:w.msgs}});
   if(error){w.msgs=oldMsgs;render();toast('发送失败');}
   else if(w.user_id!==curUser.id){sendNotification(w.user_id,'message',id,curProfile.name+' 给你的愿望留言了');}
 }
@@ -607,7 +593,7 @@ async function confirmClaim(){
   msgs.push({from:'系统',text:'这个愿望已被 '+curProfile.name+' 认领，感谢善意。',time:Date.now()});
   w.fulfilled=true;w.claimed_by=curUser.id;w.msgs=msgs;
   closeModal();render();toast('感谢你的善意');
-  const{error}=await supaUpdate('wishes',{fulfilled:true,claimed_by:curUser.id,msgs},{id:'eq.'+claimId});
+  const{error}=await db.rpc('update_wish',{wish_id:claimId,payload:{fulfilled:true,claimed_by:curUser.id,msgs}});
   if(error){w.fulfilled=oldFulfilled;w.claimed_by=oldClaimedBy;w.msgs=oldMsgs;render();toast('认领失败');}
   else if(w.user_id!==curUser.id){sendNotification(w.user_id,'claim',claimId,curProfile.name+' 认领了你的愿望');}
 }
@@ -775,14 +761,7 @@ async function markAllNotifsRead(){
   if(unread.length===0)return;
   unread.forEach(n=>n.read=true);
   renderNotifs();updateUnreadDot();
-  try{
-    const sess=await db.auth.getSession();
-    const token=sess?.data?.session?.access_token||SUPA_KEY;
-    await fetch(SUPA_URL+'/rest/v1/notifications?user_id=eq.'+curUser.id+'&read=eq.false',{
-      method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body:'{"read":true}'
-    });
-  }catch(e){console.error('markAllNotifsRead error:',e);}
+  await db.rpc('mark_all_notifs_read',{uid:curUser.id});
 }
 
 function renderNotifs(){
@@ -806,14 +785,8 @@ async function readNotif(id,wishId){
   const n=allNotifs.find(x=>Number(x.id)===nid);
   if(n&&!n.read){
     n.read=true;renderNotifs();updateUnreadDot();
-    try{
-      const sess=await db.auth.getSession();
-      const token=sess?.data?.session?.access_token||SUPA_KEY;
-      await fetch(SUPA_URL+'/rest/v1/notifications?id=eq.'+nid,{
-        method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'},
-        body:'{"read":true}'
-      });
-    }catch(e){console.error('readNotif fetch error:',e);}
+    const{error}=await db.rpc('update_notif_read',{nid});
+    if(error)console.error('readNotif error:',error);
   }
   if(wishId){const w=allWishes.find(x=>x.id===wishId);if(w)viewDetail(wishId);}
 }
@@ -917,16 +890,7 @@ async function markDMsRead(userId){
   const unread=allDMs.filter(m=>m.from_id===userId&&m.to_id===curUser.id&&!m.read);
   unread.forEach(m=>m.read=true);
   updateUnreadDot();
-  if(unread.length>0){
-    try{
-      const sess=await db.auth.getSession();
-      const token=sess?.data?.session?.access_token||SUPA_KEY;
-      await fetch(SUPA_URL+'/rest/v1/direct_messages?from_id=eq.'+userId+'&to_id=eq.'+curUser.id+'&read=eq.false',{
-        method:'PATCH',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'},
-        body:'{"read":true}'
-      });
-    }catch(e){console.error('markDMsRead error:',e);}
-  }
+  if(unread.length>0)await db.rpc('mark_dms_read',{sender_id:userId,receiver_id:curUser.id});
 }
 
 function openDMFromCard(userId,userName){
@@ -967,7 +931,7 @@ async function saveProfile(){
   document.getElementById('avatarChar').textContent=editAvatar||newName.charAt(0).toUpperCase();
   allWishes.forEach(w=>{if(w.user_id===curUser.id){w.name=newName;w.user_name=newName;w.user_avatar=editAvatar;}});
   closeModal();toast('资料已更新');render();
-  await supaUpdate('wishes',{name:newName,user_name:newName,user_avatar:editAvatar},{user_id:'eq.'+curUser.id});
+  await db.rpc('update_wishes_profile',{uid:curUser.id,new_name:newName,new_avatar:editAvatar});
 }
 
 function startRealtime(){
