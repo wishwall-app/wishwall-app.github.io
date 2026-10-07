@@ -888,8 +888,7 @@ function renderChat(){
     </div>
     <div class="chat-messages" id="chatMsgs">
       ${msgs.length===0?'<div style="text-align:center;color:var(--text-dim);padding:40px 0;font-size:0.85em">开始聊天吧</div>':''}
-      ${msgs.map(m=>`<div class="chat-bubble ${m.from_id===curUser.id?'mine':'theirs'}"${m.from_id===curUser.id&&m.id?` onclick="recallDM(${m.id})"`:''}>
-        ${m.recalled?'<span style="color:var(--text-dim);font-style:italic">消息已撤回</span>':`${esc(m.content||'')}`}<span class="chat-time">${timeAgo(m.created_at)}${m.from_id===curUser.id&&m.id&&!m.recalled?' · 点击撤回':''}</span></div>`).join('')}
+      ${msgs.map(m=>m.recalled?`<div style="text-align:${m.from_id===curUser.id?'right':'left'};padding:4px 0"><span style="font-size:0.75em;color:var(--text-dim);font-style:italic">消息已撤回</span></div>`:`<div class="chat-bubble ${m.from_id===curUser.id?'mine':'theirs'}"${m.from_id===curUser.id&&m.id?` onclick="recallDM(${m.id})"`:''}>${esc(m.content||'')}<span class="chat-time">${timeAgo(m.created_at)}</span></div>`).join('')}
     </div>
     <div class="chat-input-bar">
       <input type="text" id="dmInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendDM()">
