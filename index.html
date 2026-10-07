@@ -9,7 +9,8 @@
 <title>愿望墙</title>
 <script src="supabase.min.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+button,a,input,select,textarea{touch-action:manipulation}
 :root{
   --bg:#fafafa;--surface:#f2f2f5;--card:#ffffff;--card-hover:#fcfcfd;
   --border:#eaeaef;--border-hover:#d4d4db;
@@ -134,7 +135,8 @@ textarea{min-height:80px;resize:vertical;margin-bottom:4px}
 .tag:hover,.tag.on{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
 
 /* 卡片 */
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:12px;transition:all .3s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow);transform:translateY(0);animation:cardIn .35s cubic-bezier(.4,0,.2,1) both}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:12px;transition:all .3s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow);transform:translateY(0)}
+.card.new{animation:cardIn .35s cubic-bezier(.4,0,.2,1) both}
 .card:hover{border-color:var(--border-hover);background:var(--card-hover);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
 .card.done{border-color:rgba(90,158,111,.25);background:rgba(90,158,111,.03)}
 .card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
@@ -644,6 +646,7 @@ function viewDetail(id){
 }
 
 // ===== 渲染首页列表 =====
+let renderedIds=new Set();
 function render(){
   const search=(document.getElementById('searchInput')?.value||'').trim().toLowerCase();
   const sort=document.getElementById('sortBy')?.value||'newest';
@@ -663,10 +666,15 @@ function render(){
   if(filtered.length===0){list.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
 
-  list.innerHTML=filtered.map(w=>buildCard(w,uid,true)).join('');
+  const newIds=new Set(filtered.map(w=>w.id));
+  list.innerHTML=filtered.map(w=>{
+    const isNew=!renderedIds.has(w.id);
+    return buildCard(w,uid,true,isNew);
+  }).join('');
+  renderedIds=newIds;
 }
 
-function buildCard(w,uid,showDel){
+function buildCard(w,uid,showDel,isNew){
   const liked=(w.liked_by||[]).includes(uid);
   const msgs=w.msgs||[];
   const isOwner=w.user_id===uid;
@@ -677,7 +685,7 @@ function buildCard(w,uid,showDel){
       <input id="msg_${w.id}" placeholder="留言..." onkeydown="if(event.key==='Enter')addMsg('${w.id}')">
       <button class="btn sm" onclick="addMsg('${w.id}')">发送</button>
     </div></div>`;
-  return`<div class="card${w.fulfilled?' done':''}">
+  return`<div class="card${w.fulfilled?' done':''}${isNew?' new':''}">
     <div class="card-top">
       <span class="card-author">${w.user_avatar?`<span class="card-avatar">${esc(w.user_avatar)}</span>`:''}${w.user_id!==uid?`<button class="send-dm-btn" onclick="event.stopPropagation();openDMFromCard('${w.user_id}','${(w.name||'用户').replace(/'/g,"\\'")}')">${esc(w.name)}</button>`:`${esc(w.name)}`}</span>
       <div class="card-meta">
@@ -716,12 +724,12 @@ function renderMine(){
   const wl=document.getElementById('myWishList');
   const we=document.getElementById('myEmpty');
   if(myWishes.length===0){wl.innerHTML='';we.style.display='block';}
-  else{we.style.display='none';wl.innerHTML=myWishes.map(w=>buildCard(w,uid,true)).join('');}
+  else{we.style.display='none';wl.innerHTML=myWishes.map(w=>buildCard(w,uid,true,false)).join('');}
 
   const cl=document.getElementById('myClaimList');
   const ce=document.getElementById('myClaimEmpty');
   if(myClaims.length===0){cl.innerHTML='';ce.style.display='block';}
-  else{ce.style.display='none';cl.innerHTML=myClaims.map(w=>buildCard(w,uid,false)).join('');}
+  else{ce.style.display='none';cl.innerHTML=myClaims.map(w=>buildCard(w,uid,false,false)).join('');}
 }
 
 // ===== 通知系统 =====
