@@ -888,7 +888,8 @@ function renderChat(){
     </div>
     <div class="chat-messages" id="chatMsgs">
       ${msgs.length===0?'<div style="text-align:center;color:var(--text-dim);padding:40px 0;font-size:0.85em">开始聊天吧</div>':''}
-      ${msgs.map(m=>`<div class="chat-bubble ${m.from_id===curUser.id?'mine':'theirs'}">${esc(m.content||'')}<span class="chat-time">${timeAgo(m.created_at)}</span></div>`).join('')}
+      ${msgs.map(m=>`<div class="chat-bubble ${m.from_id===curUser.id?'mine':'theirs'}"${m.from_id===curUser.id&&m.id?` onclick="recallDM(${m.id})"`:''}>
+        ${m.recalled?'<span style="color:var(--text-dim);font-style:italic">消息已撤回</span>':`${esc(m.content||'')}`}<span class="chat-time">${timeAgo(m.created_at)}${m.from_id===curUser.id&&m.id&&!m.recalled?' · 点击撤回':''}</span></div>`).join('')}
     </div>
     <div class="chat-input-bar">
       <input type="text" id="dmInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendDM()">
@@ -906,6 +907,15 @@ async function sendDM(){
   const{error}=await db.from('direct_messages').insert(msg);
   if(error){allDMs=allDMs.filter(x=>x!==msg);renderChat();toast('发送失败');}
   else{await sendNotification(curChatUser.id,'dm',null,curProfile.name+' 给你发了一条私信');}
+}
+
+async function recallDM(id){
+  if(!confirm('撤回这条消息？'))return;
+  const m=allDMs.find(x=>x.id===id);
+  if(!m||m.from_id!==curUser.id)return;
+  m.recalled=true;m.content='';renderChat();
+  const{error}=await db.rpc('recall_dm',{msg_id:id,uid:curUser.id});
+  if(error){m.recalled=false;renderChat();toast('撤回失败');}
 }
 
 async function markDMsRead(userId){
