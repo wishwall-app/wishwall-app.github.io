@@ -331,7 +331,7 @@ textarea{min-height:80px;resize:vertical;margin-bottom:4px}
     <div class="avatar" id="avatarChar">匿</div>
     <div class="profile-info">
       <h2 id="profileName">用户</h2>
-      <p id="profileEmail">email</p>
+      <p id="profileEmail" style="font-size:0.75em;color:var(--text-dim)">ID</p>
       <button class="edit-profile-btn" onclick="openEditProfile()">编辑资料</button>
     </div>
   </div>
@@ -467,18 +467,19 @@ async function doLogout(){
 async function enterApp(user){
   curUser=user;
   const fallbackName=user.user_metadata?.display_name||user.email?.split('@')[0]||'用户';
+  const shortId='ID: '+user.id.substring(0,8).toUpperCase();
   const{data:prof}=await db.from('profiles').select('*').eq('user_id',user.id).single();
   if(prof){
-    curProfile={name:prof.display_name,email:user.email,avatar:prof.avatar_emoji||''};
+    curProfile={name:prof.display_name,shortId,avatar:prof.avatar_emoji||''};
   }else{
-    curProfile={name:fallbackName,email:user.email,avatar:user.user_metadata?.avatar_emoji||''};
+    curProfile={name:fallbackName,shortId,avatar:user.user_metadata?.avatar_emoji||''};
     await db.from('profiles').upsert({user_id:user.id,display_name:curProfile.name,avatar_emoji:curProfile.avatar,updated_at:Date.now()});
   }
   document.getElementById('authPage').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('bottomNav').classList.remove('hidden');
   document.getElementById('profileName').textContent=curProfile.name;
-  document.getElementById('profileEmail').textContent=curProfile.email;
+  document.getElementById('profileEmail').textContent=curProfile.shortId;
   document.getElementById('avatarChar').textContent=curProfile.avatar||curProfile.name.charAt(0).toUpperCase();
   loadAll();
   loadMessages();
