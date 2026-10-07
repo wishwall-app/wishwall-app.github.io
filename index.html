@@ -750,9 +750,11 @@ async function loadNotifs(){
 
 async function loadDMs(){
   const{data,error}=await db.from('direct_messages').select('*').or(`from_id.eq.${curUser.id},to_id.eq.${curUser.id}`).order('created_at',{ascending:false}).limit(200);
-  if(error){allDMs=[];return;}
+  if(error)return;
   allDMs=data||[];
-  renderConvList();
+  if(curChatUser)renderChat();
+  else renderConvList();
+  updateUnreadDot();
 }
 
 function updateUnreadDot(){
@@ -839,7 +841,8 @@ function renderConvList(){
   const list=document.getElementById('convList');
   const empty=document.getElementById('dmEmpty');
   const chatView=document.getElementById('chatView');
-  if(chatView.style.display!=='none')return;
+  if(chatView.style.display!=='none'){updateUnreadDot();return;}
+  list.style.display='block';
   if(convs.length===0){list.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
   list.innerHTML=convs.map(c=>{
@@ -942,14 +945,21 @@ function pickAvatar(btn,emoji){
 async function saveProfile(){
   const newName=document.getElementById('editName').value.trim();
   if(!newName){toast('昵称不能为空');return;}
+  const oldName=curProfile.name;
   const{error}=await db.from('profiles').upsert({user_id:curUser.id,display_name:newName,avatar_emoji:editAvatar,updated_at:Date.now()});
   if(error){console.error('saveProfile error:',error);toast('保存失败：'+error.message);return;}
   curProfile.name=newName;curProfile.avatar=editAvatar;
   document.getElementById('profileName').textContent=newName;
   document.getElementById('avatarChar').textContent=editAvatar||newName.charAt(0).toUpperCase();
-  allWishes.forEach(w=>{if(w.user_id===curUser.id){w.name=newName;w.user_name=newName;w.user_avatar=editAvatar;}});
+  allWishes.forEach(w=>{
+    if(w.user_id===curUser.id){w.name=newName;w.user_name=newName;w.user_avatar=editAvatar;}
+    if(w.msgs){w.msgs.forEach(m=>{if(m.uid===curUser.id)m.from=newName;});}
+  });
+  allDMs.forEach(m=>{if(m.from_id===curUser.id)m.from_name=newName;if(m.to_id===curUser.id)m.to_name=newName;});
+  allNotifs.forEach(n=>{if(n.from_id===curUser.id)n.from_name=newName;});
   closeModal();toast('资料已更新');render();
   await db.rpc('update_wishes_profile',{uid:curUser.id,new_name:newName,new_avatar:editAvatar});
+  await db.rpc('rename_user_everywhere',{uid:curUser.id,new_name:newName});
 }
 
 function startRealtime(){
